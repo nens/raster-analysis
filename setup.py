@@ -37,5 +37,8 @@ setup(name='raster-analysis',
       extras_require={'test': tests_require},
       entry_points={
           'console_scripts': [
+              'median = raster_analysis.median:main',
+              'zonal = raster_analysis.zonal:main',
+              'centerline = raster_analysis.centerline:main',
           ]},
       )
