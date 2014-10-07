@@ -10,6 +10,9 @@ import argparse
 import logging
 import sys
 
+from osgeo import ogr
+
+ogr.UseExceptions()
 logger = logging.getLogger(__name__)
 
 
@@ -18,15 +21,43 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description=__doc__
     )
-    # add arguments here
-    #parser.add_argument(
-        #'path',
-        #metavar='FILE',
-    #)
+    parser.add_argument(
+        'polygon_path',
+        metavar='POLYGONS',
+    )
+    parser.add_argument(
+        'linestring_path',
+        metavar='LINES',
+    )
+    parser.add_argument(
+        'store_path',
+        metavar='',
+    )
     return parser
 
 
-def command():
+class Geometries():
+    def __init__(self, path):
+        self.dataset = ogr.Open(path)
+        self.layer = self.dataset[0]
+
+    def __iter__(self):
+        for feature in self.layer:
+            yield(feature)
+
+    def query(self, feature):
+        self.layer.SetSpatialFilter(feature.geometry())
+        for feature in self.layer:
+            yield(feature)
+
+
+def command(polygon_path, linestring_path, store_path):
+    linestrings = Geometries(linestring_path)
+    for i, polygon in enumerate(Geometries(polygon_path)):
+
+        polygon.SetGeometry(polygon.geometry().Buffer(0.5))
+        for linestring in linestrings.query(polygon):
+            exit()
     return 0
 
 
