@@ -100,29 +100,57 @@ def get_geotransform(size, envelope):
     return x1, (x2 - x1) / w, 0, y2, 0, (y1 - y2) / h
 
 
+def get_sites(linestring):
+    geometry = linestring.geometry()
+    geometry.Segmentize(1)
+    for point in geometry.GetPoints():
+        yield point, point
+
+def norm(vector):
+    """
+    Return vectors rotated by degrees.
+
+    if we define dx=x2-x1 and dy=y2-y1, then the normals are (-dy, dx)
+    and (dy, -dx).
+    """
+    #return np.vstack([
+        #+np.cos(np.radians(degrees)) * vectors[:, 0] +
+        #-np.sin(np.radians(degrees)) * vectors[:, 1],
+        #+np.sin(np.radians(degrees)) * vectors[:, 0] +
+        #+np.cos(np.radians(degrees)) * vectors[:, 1],
+    #]).transpose()
+
+
 def command(polygon_path, linestring_path, store_paths, grow, distance):
     linestrings = Geometries(linestring_path)
     store = MinimumStore(store_paths)
     for i, polygon in enumerate(Geometries(polygon_path)):
         polygon.SetGeometry(polygon.geometry().Buffer(0.5))
-        geometry = polygon.geometry()
-        envelope = geometry.GetEnvelope()
 
-        geom = geometry.ExportToWkt()
-        sr = geometry.GetSpatialReference().ExportToWkt()
-        width, height = get_size(envelope)
-        data = (store.get_data(geom=geom, sr=sr, width=width, height=height))
-        exit()
+        #geometry = polygon.geometry()
+        #exit()
 
         # debug
-        array = np.ma.masked_equal(data['values'], data['no_data_value'])[0]
+        #envelope = geometry.GetEnvelope()
+
+        #geom = geometry.ExportToWkt()
+        #sr = geometry.GetSpatialReference().ExportToWkt()
+        #width, height = get_size(envelope)
+        #data = (store.get_data(geom=geom, sr=sr, width=width, height=height))
+        #array = np.ma.masked_equal(data['values'], data['no_data_value'])[0]
         #imshow(array, extent=envelope)
         #plot(*zip(*geometry.Boundary().GetPoints()))
         #show()
 
         for linestring in linestrings.query(polygon):
+            for point, normal in get_sites(linestring):
+                print(point, normal)
+                exit()
+            linestring.geometry.Segmentize(1)
             pass
             # split in meters
+            # calculate shortest distance
+            # 
             # per point
     return 0
 
