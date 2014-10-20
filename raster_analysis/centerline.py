@@ -15,10 +15,13 @@ from osgeo import ogr
 import numpy as np
 
 from raster_store import stores
-from pylab import imshow, show, plot
+from pylab import imshow, show, plot, axis
 
 ogr.UseExceptions()
 logger = logging.getLogger(__name__)
+
+
+POINT = b'POINT({} {})'
 
 
 def get_parser():
@@ -55,7 +58,29 @@ def get_parser():
     return parser
 
 
-class Geometries():
+def point2geometry(point, sr):
+    """ Return ogr geometry. """
+    return ogr.CreateGeometryFromWkt(POINT.format(*point), sr)
+
+
+class Plot(object):
+    def add_geometries(self, *geometries):
+        for geometry in geometries:
+            try:
+                points = geometry.GetPoints()
+            except RuntimeError:
+                points = geometry.Boundary().GetPoints()
+            plot(*zip(*points))
+
+    def add_array(self, *args, **kwargs):
+        imshow(*args, **kwargs)
+
+    def show(self):
+        axis('equal')
+        show()
+
+
+class Features():
     def __init__(self, path):
         self.dataset = ogr.Open(path)
         self.layer = self.dataset[0]
@@ -64,8 +89,8 @@ class Geometries():
         for feature in self.layer:
             yield(feature)
 
-    def query(self, feature):
-        self.layer.SetSpatialFilter(feature.geometry())
+    def query(self, geometry):
+        self.layer.SetSpatialFilter(geometry)
         for feature in self.layer:
             yield(feature)
 
@@ -100,58 +125,116 @@ def get_geotransform(size, envelope):
     return x1, (x2 - x1) / w, 0, y2, 0, (y1 - y2) / h
 
 
-def get_sites(linestring):
-    geometry = linestring.geometry()
-    geometry.Segmentize(1)
-    for point in geometry.GetPoints():
-        yield point, point
+class Case(object):
+    def __init__(self, store, polygon, distance, linestring):
+        self.store = store
+        self.polygon = polygon
+        self.distance = distance
+        self.linestring = linestring
+        self.sr = linestring.GetSpatialReference()
 
-def norm(vector):
-    """
-    Return vectors rotated by degrees.
+    def get_pairs(self, reverse):
+        """ Return generator of point pairs. """
+        linestring = self.linestring.Clone()
+        linestring.Segmentize(1)
+        points = linestring.GetPoints()
+        if reverse:
+            points.reverse()
+        return zip(points[:-1], points[1:])
 
-    if we define dx=x2-x1 and dy=y2-y1, then the normals are (-dy, dx)
-    and (dy, -dx).
-    """
-    #return np.vstack([
-        #+np.cos(np.radians(degrees)) * vectors[:, 0] +
-        #-np.sin(np.radians(degrees)) * vectors[:, 1],
-        #+np.sin(np.radians(degrees)) * vectors[:, 0] +
-        #+np.cos(np.radians(degrees)) * vectors[:, 1],
-    #]).transpose()
+    def get_sites(self, reverse):
+        """ Return generator of geometry, normal pairs. """
+        for (x1, y1), (x2, y2) in self.get_pairs(reverse):
+            dx, dy = x2 - x1, y2 - y1
+            l = math.sqrt(dx ** 2 + dy ** 2)
+            direction = dx / l, dy / l
+            yield point2geometry((x1, y1), self.sr), direction
+        # yield the last point with previous direction
+        yield point2geometry((x2, y2), self.sr), direction
+
+    def make_rectangle(self, point, radius, direction):
+        """ Return ogr geometry of rectangle. """
+        sr = point.GetSpatialReference()
+        x, y = point.GetPoints()[0]
+        points = []
+        dx, dy = direction
+        dx, dy = 2 * dx * radius, 2 * dy * radius  # scale
+        dx, dy = dy, -dx  # right
+        x, y = x + dx, y + dy  # move
+        points.append('{} {}'.format(x, y))
+        dx, dy = -dy, dx  # left
+        x, y = x + dx, y + dy  # move
+        points.append('{} {}'.format(x, y))
+        dx, dy = -dy, dx  # left
+        x, y = x + dx, y + dy  # move
+        x, y = x + dx, y + dy  # move
+        points.append('{} {}'.format(x, y))
+        dx, dy = -dy, dx  # left
+        x, y = x + dx, y + dy  # move
+        points.append('{} {}'.format(x, y))
+        points.append(points[0])
+        wkt = 'POLYGON ((' + ','.join(points) + '))'
+        return ogr.CreateGeometryFromWkt(wkt, sr)
+
+    def get_areas(self, reverse):
+        """ Return generator of point, area tuples. """
+        for point, direction in self.get_sites(reverse):
+            if not self.polygon.Contains(point):
+                continue
+            radius = max(self.distance, point.Distance(self.polygon))
+            circle = point.Buffer(radius)
+            rectangle = self.make_rectangle(point=point,
+                                            radius=radius,
+                                            direction=direction)
+            intersection = circle.Intersection(rectangle)
+            yield point, self.polygon.Intersection(intersection)
+
+    def get_levels(self, reverse):
+        for point, polygon in self.get_areas(reverse):
+            envelope = polygon.GetEnvelope()
+            width, height = get_size(envelope)
+
+            # get data from store
+            data = self.store.get_data(sr=self.sr,
+                                       width=width,
+                                       height=height,
+                                       geom=polygon.ExportToWkt())
+            array = np.ma.masked_equal(data['values'],
+                                       data['no_data_value'])[0]
+
+            # debug plotting
+            plot = Plot()
+            plot.add_geometries(
+                point,
+                polygon,
+                self.polygon,
+                self.linestring,
+            )
+            plot.add_array(array, extent=envelope)
+            plot.show()
+            exit()
+
+            yield point[0], array.min().item()
 
 
 def command(polygon_path, linestring_path, store_paths, grow, distance):
-    linestrings = Geometries(linestring_path)
+    linestring_features = Features(linestring_path)
     store = MinimumStore(store_paths)
-    for i, polygon in enumerate(Geometries(polygon_path)):
-        polygon.SetGeometry(polygon.geometry().Buffer(0.5))
+    for i, polygon_feature in enumerate(Features(polygon_path)):
+        # grow a little
+        polygon = polygon_feature.geometry().Buffer(grow)
 
-        #geometry = polygon.geometry()
-        #exit()
+        # query the linestrings
+        for linestring_feature in linestring_features.query(polygon):
+            linestring = linestring_feature.geometry()
 
-        # debug
-        #envelope = geometry.GetEnvelope()
+            case = Case(store=store,
+                        polygon=polygon,
+                        distance=distance,
+                        linestring=linestring)
 
-        #geom = geometry.ExportToWkt()
-        #sr = geometry.GetSpatialReference().ExportToWkt()
-        #width, height = get_size(envelope)
-        #data = (store.get_data(geom=geom, sr=sr, width=width, height=height))
-        #array = np.ma.masked_equal(data['values'], data['no_data_value'])[0]
-        #imshow(array, extent=envelope)
-        #plot(*zip(*geometry.Boundary().GetPoints()))
-        #show()
-
-        for linestring in linestrings.query(polygon):
-            for point, normal in get_sites(linestring):
-                print(point, normal)
-                exit()
-            linestring.geometry.Segmentize(1)
-            pass
-            # split in meters
-            # calculate shortest distance
-            # 
-            # per point
+            forward = case.get_levels(Reverse).next()
+            reverse = case.get_levels(True)
     return 0
 
 
