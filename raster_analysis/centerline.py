@@ -9,15 +9,19 @@ from __future__ import division
 import argparse
 import logging
 import math
+import os
 import sys
 
+from osgeo import gdal
 from osgeo import ogr
 import numpy as np
 
 from raster_store import stores
 from pylab import imshow, show, plot, axis
 
+gdal.UseExceptions()
 ogr.UseExceptions()
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +45,10 @@ def get_parser():
         'store_paths',
         metavar='STORE',
         nargs='+',
+    )
+    parser.add_argument(
+        'path',
+        metavar='POINTS',
     )
     parser.add_argument(
         '-g', '--grow',
@@ -89,6 +97,9 @@ class Features():
         for feature in self.layer:
             yield(feature)
 
+    def __len__(self):
+        return self.layer.GetFeatureCount()
+
     def query(self, geometry):
         self.layer.SetSpatialFilter(geometry)
         for feature in self.layer:
@@ -136,7 +147,7 @@ class Case(object):
     def get_pairs(self, reverse):
         """ Return generator of point pairs. """
         linestring = self.linestring.Clone()
-        linestring.Segmentize(1)
+        linestring.Segmentize(10)
         points = linestring.GetPoints()
         if reverse:
             points.reverse()
@@ -190,37 +201,98 @@ class Case(object):
             yield point, self.polygon.Intersection(intersection)
 
     def get_levels(self, reverse):
+        """ Return generator point, level tuples. """
         for point, polygon in self.get_areas(reverse):
             envelope = polygon.GetEnvelope()
             width, height = get_size(envelope)
+            
+            if polygon.GetGeometryName() == 'MULTIPOLYGON':
+                collection = polygon  # keep reference or segfault
+                polygon = min(collection, key=point.Distance)
+            if polygon.GetGeometryName() != 'POLYGON':
+                print(polygon.GetGeometryName())
+                ##debug plotting
+                #plot = Plot()
+                #plot.add_geometries(
+                    #polygon,
+                    #self.polygon,
+                    #self.linestring,
+                    #point,
+                #)
+                ##plot.add_geometries(*[p for p in polygon])
+                ##plot.add_array(array, extent=envelope)
+                #plot.show()
+                ##import ipdb
+                ##ipdb.set_trace() 
+                #exit()
 
             # get data from store
-            data = self.store.get_data(sr=self.sr,
-                                       width=width,
-                                       height=height,
-                                       geom=polygon.ExportToWkt())
+            try:
+                data = self.store.get_data(sr=self.sr,
+                                           width=width,
+                                           height=height,
+                                           geom=polygon.ExportToWkt())
+            except:
+                import ipdb
+                ipdb.set_trace() 
             array = np.ma.masked_equal(data['values'],
                                        data['no_data_value'])[0]
 
-            # debug plotting
-            plot = Plot()
-            plot.add_geometries(
-                point,
-                polygon,
-                self.polygon,
-                self.linestring,
-            )
-            plot.add_array(array, extent=envelope)
-            plot.show()
-            exit()
-
-            yield point[0], array.min().item()
+            yield point, array.min().item()
+            #yield point, 0
 
 
-def command(polygon_path, linestring_path, store_paths, grow, distance):
+class Sink(object):
+    KEY = b'height'
+
+    def __init__(self, path, template_path):
+        # read template
+        template_data_source = ogr.Open(template_path)
+        template_layer = template_data_source[0]
+        template_sr = template_layer.GetSpatialRef()
+
+        # create or replace shape
+        driver = ogr.GetDriverByName(b'ESRI Shapefile')
+        if os.path.exists(path):
+            driver.DeleteDataSource(str(path))
+        self.dataset = driver.CreateDataSource(str(path))
+        layer_name = os.path.basename(path)
+        self.layer = self.dataset.CreateLayer(layer_name, template_sr)
+
+        # Copy field definitions
+        layer_defn = template_layer.GetLayerDefn()
+        for i in range(layer_defn.GetFieldCount()):
+            self.layer.CreateField(layer_defn.GetFieldDefn(i))
+
+        # Add extra field for the height
+        self.layer.CreateField(ogr.FieldDefn(self.KEY, ogr.OFTReal))
+        self.layer_defn = self.layer.GetLayerDefn()
+
+    def add(self, template_feature, points, levels):
+        """ Add feature with points and level. """
+        for point, level in zip(points, levels):
+            feature = ogr.Feature(self.layer_defn)
+
+            # Copy attributes
+            for key, value in template_feature.items().items():
+                feature[key] = value
+            feature[self.KEY] = level
+
+            # Set geometry and add to layer
+            feature.SetGeometry(point)
+            self.layer.CreateFeature(feature)
+
+
+def command(polygon_path, linestring_path, store_paths, grow, distance, path):
+    """ Main """
     linestring_features = Features(linestring_path)
     store = MinimumStore(store_paths)
-    for i, polygon_feature in enumerate(Features(polygon_path)):
+    sink = Sink(path=path, template_path=linestring_path)
+
+    polygon_features = Features(polygon_path)
+    total = len(polygon_features)
+    gdal.TermProgress_nocb(0)
+    for count, polygon_feature in enumerate(polygon_features, 1):
         # grow a little
         polygon = polygon_feature.geometry().Buffer(grow)
 
@@ -233,8 +305,24 @@ def command(polygon_path, linestring_path, store_paths, grow, distance):
                         distance=distance,
                         linestring=linestring)
 
-            forward = case.get_levels(Reverse).next()
-            reverse = case.get_levels(True)
+            # do
+            points, levels = [linestring.Centroid()], [0]
+            points, levels = zip(*list(case.get_levels(False)))
+            if len(levels) > 1:
+                # check upstream
+                index = int(len(levels) / 2)
+                first = levels[:index]
+                last = levels[index:]
+                if sum(first) / len(first) > sum(last) / len(last):
+                    points, levels = zip(*list(case.get_levels(False)))
+            
+            # save
+            sink.add(points=points,
+                     levels=levels,
+                     template_feature=linestring_feature)
+        
+        gdal.TermProgress_nocb(count / total)
+            
     return 0
 
 
