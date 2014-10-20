@@ -147,7 +147,7 @@ class Case(object):
     def get_pairs(self, reverse):
         """ Return generator of point pairs. """
         linestring = self.linestring.Clone()
-        linestring.Segmentize(10)
+        linestring.Segmentize(1)
         points = linestring.GetPoints()
         if reverse:
             points.reverse()
@@ -205,12 +205,10 @@ class Case(object):
         for point, polygon in self.get_areas(reverse):
             envelope = polygon.GetEnvelope()
             width, height = get_size(envelope)
-            
+
             if polygon.GetGeometryName() == 'MULTIPOLYGON':
                 collection = polygon  # keep reference or segfault
                 polygon = min(collection, key=point.Distance)
-            if polygon.GetGeometryName() != 'POLYGON':
-                print(polygon.GetGeometryName())
                 ##debug plotting
                 #plot = Plot()
                 #plot.add_geometries(
@@ -223,18 +221,14 @@ class Case(object):
                 ##plot.add_array(array, extent=envelope)
                 #plot.show()
                 ##import ipdb
-                ##ipdb.set_trace() 
+                ##ipdb.set_trace()
                 #exit()
 
             # get data from store
-            try:
-                data = self.store.get_data(sr=self.sr,
-                                           width=width,
-                                           height=height,
-                                           geom=polygon.ExportToWkt())
-            except:
-                import ipdb
-                ipdb.set_trace() 
+            data = self.store.get_data(sr=self.sr,
+                                       width=width,
+                                       height=height,
+                                       geom=polygon.ExportToWkt())
             array = np.ma.masked_equal(data['values'],
                                        data['no_data_value'])[0]
 
@@ -253,8 +247,8 @@ class Sink(object):
 
         # create or replace shape
         driver = ogr.GetDriverByName(b'ESRI Shapefile')
-        if os.path.exists(path):
-            driver.DeleteDataSource(str(path))
+        #if os.path.exists(path):
+            #driver.DeleteDataSource(str(path))
         self.dataset = driver.CreateDataSource(str(path))
         layer_name = os.path.basename(path)
         self.layer = self.dataset.CreateLayer(layer_name, template_sr)
@@ -315,14 +309,13 @@ def command(polygon_path, linestring_path, store_paths, grow, distance, path):
                 last = levels[index:]
                 if sum(first) / len(first) > sum(last) / len(last):
                     points, levels = zip(*list(case.get_levels(False)))
-            
+
             # save
             sink.add(points=points,
                      levels=levels,
                      template_feature=linestring_feature)
-        
+
         gdal.TermProgress_nocb(count / total)
-            
     return 0
 
 
