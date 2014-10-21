@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# (c) Nelen & Schuurmans.  GPL licensed, see LICENSE.rst.
+""" Find lowest upstream points. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -8,7 +8,8 @@ from __future__ import division
 
 import argparse
 import logging
-import os
+import math
+import re
 import sys
 
 from osgeo import gdal
@@ -16,101 +17,108 @@ from osgeo import ogr
 import numpy as np
 
 from raster_store import stores
+from raster_analysis import common
 
-DRIVER_OGR_SHAPE = ogr.GetDriverByName(b'ESRI Shapefile')
-
-logger = logging.getLogger(__name__)
 gdal.UseExceptions()
 ogr.UseExceptions()
+
+logger = logging.getLogger(__name__)
+
+
+POINT = b'POINT({} {})'
+KEY = b'height'
 
 
 def get_parser():
     """ Return argument parser. """
-    parser = argparse.ArgumentParser(description=(
-        'Compute the max for geometries for data in a store'
-    ))
-    parser.add_argument('store_path',
-                        metavar='STORE',
-                        help='Path to raster store')
-    parser.add_argument('source_path',
-                        metavar='SOURCE',
-                        help='Path to vector source')
-    parser.add_argument('target_path',
-                        metavar='TARGET',
-                        help='Path to results shape')
-    parser.add_argument('error_path',
-                        metavar='ERROR',
-                        help='Path to errors shape')
+    parser = argparse.ArgumentParser(
+        description=__doc__
+    )
+    parser.add_argument(
+        'source_path',
+        metavar='SOURCE',
+        help='Path to shape with source features.'
+    )
+    parser.add_argument(
+        'store_path',
+        metavar='STORE',
+        help='Path to raster store.'
+    )
+    parser.add_argument(
+        'target_path',
+        metavar='TARGET',
+        help='Path to shape with target features.'
+    )
+    parser.add_argument(
+        'statistics',
+        metavar='STATISTIC',
+        nargs='+',
+        help='Stastics to compute, for example "value", "median", "p90".'
+    )
     return parser
 
 
-def compute(store, geometry):
-    """ Return max. """
-    x1, x2, y1, y2 = geometry.GetEnvelope()
-    width = int(round((x2 - x1) / 0.5))
-    height = int(round((y2 - y1) / 0.5))
-    datadict = store.get_data_for_polygon(
-        projection='epsg:28992',
-        geometry=geometry,
-        height=height,
-        width=width,
-        select=None,
+def get_kwargs(geometry):
+    """ Return get_data_kwargs based on ahn2 resolution. """
+    name = geometry.GetGeometryName()
+    if name == 'POINT':
+        return {}
+    if name == 'LINESTRING':
+        size = int(math.ceil(geometry.Length() / 0.5))
+        return {'size': size}
+    if name == 'POLYGON':
+        x1, x2, y1, y2 = geometry.GetEnvelope()
+        width = int(math.ceil((x2 - x1) / 0.5))
+        height = int(math.ceil((y2 - y1) / 0.5))
+        return {'width': width, 'height': height}
+
+
+def command(source_path, store_path, target_path, statistics):
+    """ Main """
+    source_features = common.Source(source_path)
+    store = stores.get(store_path)
+
+    # prepare statistics gathering
+    actions = {}  # column_name: func_name, args
+    percentile = None
+    pattern = re.compile('(p)([0-9]+)')
+    for statistic in statistics:
+        match = pattern.match(statistic)
+        if pattern.match(statistic):
+            percentile = int(match.groups()[1])
+            actions[statistic] = 'percentile', [percentile]
+        elif statistic == 'value':
+            actions[statistic] = 'item', []
+        else:
+            actions[statistic] = statistic, []
+
+    target = common.Target(
+        path=target_path,
+        template_path=source_path,
+        attributes=actions,
     )
-    values = datadict['values']
-    mask = np.equal(values, datadict['no_data_value'])
-    max = np.max(values[~mask])
-    return max
 
-
-def command(store_path, source_path, target_path, error_path):
-    """ Calculate max. """
-    store = stores.Store(store_path)
-
-    # source datasource
-    source_datasource = ogr.Open(source_path)
-    source_layer = source_datasource[0]
-
-    # target datasource
-    if os.path.exists(target_path):
-        DRIVER_OGR_SHAPE.DeleteDataSource(target_path)
-    target_datasource = DRIVER_OGR_SHAPE.CreateDataSource(target_path)
-    target_layer = target_datasource.CreateLayer(b'max')
-    target_layer.CreateField(ogr.FieldDefn(b'max', ogr.OFTReal))
-    target_layer_defn = target_layer.GetLayerDefn()
-
-    # error datasource
-    if os.path.exists(error_path):
-        DRIVER_OGR_SHAPE.DeleteDataSource(error_path)
-    error_datasource = DRIVER_OGR_SHAPE.CreateDataSource(error_path)
-    error_layer = error_datasource.CreateLayer(b'max')
-    source_layer_defn = source_layer.GetLayerDefn()
-    for i in range(source_layer_defn.GetFieldCount()):
-        source_field_defn = source_layer_defn.GetFieldDefn(i)
-        error_layer.CreateField(source_field_defn)
-
-    # prepare for progress
-    total = source_layer.GetFeatureCount()
+    total = len(source_features)
     gdal.TermProgress_nocb(0)
+    for count, source_feature in enumerate(source_features, 1):
+        # retrieve raster data
+        geometry = source_feature.geometry()
+        kwargs = get_kwargs(geometry)
+        data = store.get_data_direct(geometry, **kwargs)
+        array = np.ma.masked_equal(data['values'],
+                                   data['no_data_value']).compressed()
 
-    for count, source_feature in enumerate(source_layer, 1):
-        source_geometry = source_feature.geometry()
-        try:
-            max = compute(geometry=source_geometry, store=store)
-        except Exception as e:
-            logger.exception(e)
-            error_layer.CreateFeature(source_feature)
-            gdal.TermProgress_nocb(count / total)
-            continue
-        if np.isnan(max):
-            gdal.TermProgress_nocb(count / total)
-            continue
+        # apppend statistics
+        attributes = source_feature.items()
+        for column, (action, args) in actions.items():
+            try:
+                attributes[column] = getattr(array, action)(*args)
+            except AttributeError:
+                attributes[column] = getattr(np, action)(array, *args)
 
-        target_feature = ogr.Feature(target_layer_defn)
-        target_feature[b'max'] = max
-        target_feature.SetGeometry(source_geometry)
-        target_layer.CreateFeature(target_feature)
-
+        target.append(geometry=geometry, attributes=attributes)
         gdal.TermProgress_nocb(count / total)
+    return 0
 
 
 def main():

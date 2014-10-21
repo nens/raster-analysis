@@ -9,7 +9,6 @@ from __future__ import division
 import argparse
 import logging
 import math
-import os
 import sys
 
 from osgeo import gdal
@@ -17,7 +16,7 @@ from osgeo import ogr
 import numpy as np
 
 from raster_store import stores
-from pylab import imshow, show, plot, axis
+from raster_analysis import common
 
 gdal.UseExceptions()
 ogr.UseExceptions()
@@ -26,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 POINT = b'POINT({} {})'
+KEY = b'height'
 
 
 def get_parser():
@@ -71,47 +71,13 @@ def point2geometry(point, sr):
     return ogr.CreateGeometryFromWkt(POINT.format(*point), sr)
 
 
-class Plot(object):
-    def add_geometries(self, *geometries):
-        for geometry in geometries:
-            try:
-                points = geometry.GetPoints()
-            except RuntimeError:
-                points = geometry.Boundary().GetPoints()
-            plot(*zip(*points))
-
-    def add_array(self, *args, **kwargs):
-        imshow(*args, **kwargs)
-
-    def show(self):
-        axis('equal')
-        show()
-
-
-class Features():
-    def __init__(self, path):
-        self.dataset = ogr.Open(path)
-        self.layer = self.dataset[0]
-
-    def __iter__(self):
-        for feature in self.layer:
-            yield(feature)
-
-    def __len__(self):
-        return self.layer.GetFeatureCount()
-
-    def query(self, geometry):
-        self.layer.SetSpatialFilter(geometry)
-        for feature in self.layer:
-            yield(feature)
-
-
 class MinimumStore(object):
     def __init__(self, paths):
         self.stores = [stores.get(path) for path in paths]
 
-    def get_data(self, *args, **kwargs):
-        data = [store.get_data(*args, **kwargs) for store in self.stores]
+    def get_data_direct(self, *args, **kwargs):
+        data = [store.get_data_direct(*args,
+                                      **kwargs) for store in self.stores]
         array = np.ma.array(
             [np.ma.masked_equal(d['values'],
                                 d['no_data_value']) for d in data],
@@ -207,83 +173,31 @@ class Case(object):
             width, height = get_size(envelope)
 
             if polygon.GetGeometryName() == 'MULTIPOLYGON':
-                collection = polygon  # keep reference or segfault
+                # keep reference to original collection or segfault
+                collection = polygon
                 polygon = min(collection, key=point.Distance)
-                ##debug plotting
-                #plot = Plot()
-                #plot.add_geometries(
-                    #polygon,
-                    #self.polygon,
-                    #self.linestring,
-                    #point,
-                #)
-                ##plot.add_geometries(*[p for p in polygon])
-                ##plot.add_array(array, extent=envelope)
-                #plot.show()
-                ##import ipdb
-                ##ipdb.set_trace()
-                #exit()
 
             # get data from store
-            data = self.store.get_data(sr=self.sr,
-                                       width=width,
-                                       height=height,
-                                       geom=polygon.ExportToWkt())
+            data = self.store.get_data_direct(width=width,
+                                              height=height,
+                                              geometry=polygon)
             array = np.ma.masked_equal(data['values'],
                                        data['no_data_value'])[0]
 
             yield point, array.min().item()
-            #yield point, 0
-
-
-class Sink(object):
-    KEY = b'height'
-
-    def __init__(self, path, template_path):
-        # read template
-        template_data_source = ogr.Open(template_path)
-        template_layer = template_data_source[0]
-        template_sr = template_layer.GetSpatialRef()
-
-        # create or replace shape
-        driver = ogr.GetDriverByName(b'ESRI Shapefile')
-        #if os.path.exists(path):
-            #driver.DeleteDataSource(str(path))
-        self.dataset = driver.CreateDataSource(str(path))
-        layer_name = os.path.basename(path)
-        self.layer = self.dataset.CreateLayer(layer_name, template_sr)
-
-        # Copy field definitions
-        layer_defn = template_layer.GetLayerDefn()
-        for i in range(layer_defn.GetFieldCount()):
-            self.layer.CreateField(layer_defn.GetFieldDefn(i))
-
-        # Add extra field for the height
-        self.layer.CreateField(ogr.FieldDefn(self.KEY, ogr.OFTReal))
-        self.layer_defn = self.layer.GetLayerDefn()
-
-    def add(self, template_feature, points, levels):
-        """ Add feature with points and level. """
-        for point, level in zip(points, levels):
-            feature = ogr.Feature(self.layer_defn)
-
-            # Copy attributes
-            for key, value in template_feature.items().items():
-                feature[key] = value
-            feature[self.KEY] = level
-
-            # Set geometry and add to layer
-            feature.SetGeometry(point)
-            self.layer.CreateFeature(feature)
 
 
 def command(polygon_path, linestring_path, store_paths, grow, distance, path):
     """ Main """
-    linestring_features = Features(linestring_path)
+    linestring_features = common.Source(linestring_path)
     store = MinimumStore(store_paths)
-    sink = Sink(path=path, template_path=linestring_path)
+    target = common.Target(
+        path=path,
+        template_path=linestring_path,
+        attributes=[KEY],
+    )
 
-    polygon_features = Features(polygon_path)
+    polygon_features = common.Source(polygon_path)
     total = len(polygon_features)
     gdal.TermProgress_nocb(0)
     for count, polygon_feature in enumerate(polygon_features, 1):
@@ -311,10 +225,10 @@ def command(polygon_path, linestring_path, store_paths, grow, distance, path):
                     points, levels = zip(*list(case.get_levels(False)))
 
             # save
-            sink.add(points=points,
-                     levels=levels,
-                     template_feature=linestring_feature)
-
+            attributes = dict(linestring_feature.items())
+            for point, level in zip(points, levels):
+                attributes[KEY] = level
+                target.append(geometry=point, attributes=attributes)
         gdal.TermProgress_nocb(count / total)
     return 0
 
