@@ -51,9 +51,26 @@ class Source(object):
         return self.layer.GetFeatureCount()
 
     def query(self, geometry):
+        """ Return generator of features with geometry as spatial filter. """
         self.layer.SetSpatialFilter(geometry)
-        for feature in self.layer:
+        total = len(self)
+        gdal.TermProgress_nocb(0)
+        for count, feature in enumerate(self.layer):
             yield(feature)
+            gdal.TermProgress_nocb(count / total)
+        self.layer.SetSpatialFilter(None)
+
+    def select(self, text):
+        """ Return generator of features for text, e.g. '2/5' """
+        selected, parts = map(int, text.split('/'))
+        size = len(self) / parts
+        start = int((selected - 1) * size)
+        stop = len(self) if selected == parts else int(selected * size)
+        total = stop - start
+        gdal.TermProgress_nocb(0)
+        for count, fid in enumerate(xrange(start, stop), 1):
+            yield self.layer[fid]
+            gdal.TermProgress_nocb(count / total)
 
 
 class Target(object):

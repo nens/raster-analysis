@@ -198,9 +198,7 @@ def command(polygon_path, linestring_path, store_paths, grow, distance, path):
     )
 
     polygon_features = common.Source(polygon_path)
-    total = len(polygon_features)
-    gdal.TermProgress_nocb(0)
-    for count, polygon_feature in enumerate(polygon_features, 1):
+    for polygon_feature in polygon_features:
         # grow a little
         polygon = polygon_feature.geometry().Buffer(grow)
 
@@ -229,7 +227,6 @@ def command(polygon_path, linestring_path, store_paths, grow, distance, path):
             for point, level in zip(points, levels):
                 attributes[KEY] = level
                 target.append(geometry=point, attributes=attributes)
-        gdal.TermProgress_nocb(count / total)
     return 0
 
 

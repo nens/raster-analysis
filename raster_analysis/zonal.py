@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Find lowest upstream points. """
+""" Calculate zonal statistics of raster store for a shapefile. """
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -37,23 +37,27 @@ def get_parser():
     parser.add_argument(
         'source_path',
         metavar='SOURCE',
-        help='Path to shape with source features.'
+        help='Path to shape with source features.',
     )
     parser.add_argument(
         'store_path',
         metavar='STORE',
-        help='Path to raster store.'
+        help='Path to raster store.',
     )
     parser.add_argument(
         'target_path',
         metavar='TARGET',
-        help='Path to shape with target features.'
+        help='Path to shape with target features.',
     )
     parser.add_argument(
         'statistics',
         metavar='STATISTIC',
         nargs='+',
-        help='Stastics to compute, for example "value", "median", "p90".'
+        help='Stastics to compute, for example "value", "median", "p90".',
+    )
+    parser.add_argument(
+        '-p', '--partial',
+        help='Partial processing source, for example "2/3"',
     )
     return parser
 
@@ -73,9 +77,13 @@ def get_kwargs(geometry):
         return {'width': width, 'height': height}
 
 
-def command(source_path, store_path, target_path, statistics):
+def command(source_path, store_path, target_path, statistics, partial):
     """ Main """
-    source_features = common.Source(source_path)
+    if partial is None:
+        source_features = common.Source(source_path)
+    else:
+        source_features = common.Source(source_path).select(partial)
+
     store = stores.get(store_path)
 
     # prepare statistics gathering
@@ -98,9 +106,7 @@ def command(source_path, store_path, target_path, statistics):
         attributes=actions,
     )
 
-    total = len(source_features)
-    gdal.TermProgress_nocb(0)
-    for count, source_feature in enumerate(source_features, 1):
+    for source_feature in source_features:
         # retrieve raster data
         geometry = source_feature.geometry()
         kwargs = get_kwargs(geometry)
@@ -110,14 +116,17 @@ def command(source_path, store_path, target_path, statistics):
 
         # apppend statistics
         attributes = source_feature.items()
-        for column, (action, args) in actions.items():
-            try:
-                attributes[column] = getattr(array, action)(*args)
-            except AttributeError:
-                attributes[column] = getattr(np, action)(array, *args)
+        if array.size:
+            for column, (action, args) in actions.items():
+                try:
+                    attributes[column] = getattr(array, action)(*args)
+                except AttributeError:
+                    attributes[column] = getattr(np, action)(array, *args)
+        else:
+            for column, (action, args) in actions.items():
+                attributes[column] = np.nan
 
         target.append(geometry=geometry, attributes=attributes)
-        gdal.TermProgress_nocb(count / total)
     return 0
 
 
