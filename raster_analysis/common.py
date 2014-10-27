@@ -33,7 +33,7 @@ class Source(object):
         self.layer.SetSpatialFilter(geometry)
         total = len(self)
         gdal.TermProgress_nocb(0)
-        for count, feature in enumerate(self.layer):
+        for count, feature in enumerate(self.layer, 1):
             yield(feature)
             gdal.TermProgress_nocb(count / total)
         self.layer.SetSpatialFilter(None)

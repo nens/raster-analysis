@@ -185,6 +185,9 @@ class Case(object):
                 # keep reference to original collection or segfault
                 collection = polygon
                 polygon = min(collection, key=point.Distance)
+                polygon.AssignSpatialReference(
+                    collection.GetSpatialReference(),
+                )
 
             # get data from store
             data = self.store.get_data_direct(width=width,
