@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-""" Find lowest upstream points. """
+"""
+Find lowest upstream points along a line within a polygon using
+combined data from raster stores.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -36,33 +39,39 @@ def get_parser():
     parser.add_argument(
         'polygon_path',
         metavar='POLYGONS',
+        help='Confine search to these polygons.',
     )
     parser.add_argument(
         'linestring_path',
         metavar='LINES',
+        help='Assign height to points on these lines.',
     )
     parser.add_argument(
         'store_paths',
         metavar='STORE',
         nargs='+',
+        help=('Get raster data from this raster '
+              'store (multiple stores possible).'),
     )
     parser.add_argument(
         'path',
         metavar='POINTS',
+        help='Path to output (point-)shapefile',
     )
     parser.add_argument(
         '-g', '--grow',
         type=float,
         default=0.5,
         metavar='',
+        help='Initial buffer of input polygons (default 0.5).',
     )
     parser.add_argument(
         '-d', '--distance',
         type=float,
         default=15.0,
         metavar='',
+        help='Minimum upstream search distance (default 15.0).',
     )
-
     return parser
 
 
