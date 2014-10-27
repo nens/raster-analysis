@@ -19,7 +19,10 @@ class Plot(object):
                 points = geometry.GetPoints()
             except RuntimeError:
                 points = geometry.Boundary().GetPoints()
-            plot(*zip(*points))
+            if geometry.GetGeometryName() == 'POINT':
+                plot(*zip(*points) + ['o'])
+            else:
+                plot(*zip(*points))
 
     def add_array(self, *args, **kwargs):
         imshow(*args, **kwargs)

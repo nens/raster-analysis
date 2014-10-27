@@ -22,8 +22,11 @@ class Source(object):
         self.layer = self.dataset[0]
 
     def __iter__(self):
-        for feature in self.layer:
-            yield(feature)
+        total = len(self)
+        gdal.TermProgress_nocb(0)
+        for count, feature in enumerate(self.layer, 1):
+            yield feature
+            gdal.TermProgress_nocb(count / total)
 
     def __len__(self):
         return self.layer.GetFeatureCount()
@@ -31,11 +34,8 @@ class Source(object):
     def query(self, geometry):
         """ Return generator of features with geometry as spatial filter. """
         self.layer.SetSpatialFilter(geometry)
-        total = len(self)
-        gdal.TermProgress_nocb(0)
-        for count, feature in enumerate(self.layer, 1):
-            yield(feature)
-            gdal.TermProgress_nocb(count / total)
+        for feature in self.layer:
+            yield feature
         self.layer.SetSpatialFilter(None)
 
     def select(self, text):
