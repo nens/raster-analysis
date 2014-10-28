@@ -194,7 +194,7 @@ class Case(object):
                                               height=height,
                                               geometry=polygon)
             array = np.ma.masked_equal(data['values'],
-                                       data['no_data_value'])[0]
+                                       data['no_data_value']).ravel()
 
             #level = array.min().item()
             #if -3.5 < level < -3.4:
@@ -206,7 +206,7 @@ class Case(object):
                 #import ipdb
                 #ipdb.set_trace()
 
-            yield point, array.min().item()
+            yield point, array[array.argsort()[1]].item()
 
 
 def command(polygon_path, linestring_path, store_paths, grow, distance, path):
