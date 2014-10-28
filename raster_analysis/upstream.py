@@ -72,6 +72,10 @@ def get_parser():
         metavar='',
         help='Minimum upstream search distance (default 15.0).',
     )
+    parser.add_argument(
+        '-p', '--partial',
+        help='Partial processing source, for example "2/3"',
+    )
     return parser
 
 
@@ -209,7 +213,8 @@ class Case(object):
             yield point, array[array.argsort()[1]].item()
 
 
-def command(polygon_path, linestring_path, store_paths, grow, distance, path):
+def command(polygon_path, linestring_path,
+            store_paths, grow, distance, path, partial):
     """ Main """
     linestring_features = common.Source(linestring_path)
     store = MinimumStore(store_paths)
@@ -219,7 +224,12 @@ def command(polygon_path, linestring_path, store_paths, grow, distance, path):
         attributes=[KEY],
     )
 
-    polygon_features = common.Source(polygon_path)
+    # select some or all polygons
+    if partial is None:
+        polygon_features = common.Source(polygon_path)
+    else:
+        polygon_features = common.Source(polygon_path).select(partial)
+
     for polygon_feature in polygon_features:
         # grow a little
         polygon = polygon_feature.geometry().Buffer(grow)
