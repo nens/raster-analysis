@@ -73,6 +73,13 @@ def get_parser():
         help='Minimum upstream search distance (default 15.0).',
     )
     parser.add_argument(
+        '-s', '--separation',
+        type=float,
+        default=1.0,
+        metavar='',
+        help='Separation between points (default 1.0)',
+    )
+    parser.add_argument(
         '-p', '--partial',
         help='Partial processing source, for example "2/3"',
     )
@@ -116,17 +123,18 @@ def get_geotransform(size, envelope):
 
 
 class Case(object):
-    def __init__(self, store, polygon, distance, linestring):
+    def __init__(self, store, polygon, distance, separation, linestring):
         self.store = store
         self.polygon = polygon
         self.distance = distance
         self.linestring = linestring
+        self.separation = separation
         self.sr = linestring.GetSpatialReference()
 
     def get_pairs(self, reverse):
         """ Return generator of point pairs. """
         linestring = self.linestring.Clone()
-        linestring.Segmentize(1)
+        linestring.Segmentize(self.separation)
         points = linestring.GetPoints()
         if reverse:
             points.reverse()
@@ -210,11 +218,14 @@ class Case(object):
                 #import ipdb
                 #ipdb.set_trace()
 
-            yield point, array[array.argsort()[1]].item()
+            try:
+                yield point, array[array.argsort()[1]].item()
+            except IndexError:
+                continue
 
 
 def command(polygon_path, linestring_path,
-            store_paths, grow, distance, path, partial):
+            store_paths, grow, distance, separation, path, partial):
     """ Main """
     linestring_features = common.Source(linestring_path)
     store = MinimumStore(store_paths)
@@ -241,6 +252,7 @@ def command(polygon_path, linestring_path,
             case = Case(store=store,
                         polygon=polygon,
                         distance=distance,
+                        separation=separation,
                         linestring=linestring)
 
             # do
