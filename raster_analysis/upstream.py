@@ -256,8 +256,12 @@ def command(polygon_path, linestring_path,
                         linestring=linestring)
 
             # do
-            points, levels = [linestring.Centroid()], [0]
-            points, levels = zip(*list(case.get_levels(False)))
+            try:
+                points, levels = zip(*list(case.get_levels(False)))
+            except:
+                # there are no levels for this case
+                continue
+
             if len(levels) > 1:
                 # check upstream
                 index = int(len(levels) / 2)
