@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-""" Calculate zonal statistics of raster store for a shapefile. """
+"""
+Calculate zonal statistics of raster store for a shapefile.
+
+Special stats worth mentioning are:
+    - count: The amount of pixels with data
+    - size: The total amount of pixels
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -111,20 +117,22 @@ def command(source_path, store_path, target_path, statistics, partial):
         geometry = source_feature.geometry()
         kwargs = get_kwargs(geometry)
         data = store.get_data_direct(geometry, **kwargs)
-        array = np.ma.masked_equal(data['values'],
-                                   data['no_data_value']).compressed()
+        masked = np.ma.masked_equal(data['values'],
+                                    data['no_data_value'])
+        compressed = masked.compressed()
 
         # apppend statistics
         attributes = source_feature.items()
-        if array.size:
-            for column, (action, args) in actions.items():
-                try:
-                    attributes[column] = getattr(array, action)(*args)
-                except AttributeError:
-                    attributes[column] = getattr(np, action)(array, *args)
-        else:
-            for column, (action, args) in actions.items():
-                attributes[column] = np.nan
+        for column, (action, args) in actions.items():
+            try:
+                if hasattr(np.ma, action):
+                    value = getattr(np.ma, action)(masked, *args)
+                else:
+                    value = getattr(np, action)(compressed, *args)
+                value = np.nan if np.ma.is_masked(value) else value
+            except ValueError:
+                value = np.nan
+            attributes[column] = value
 
         target.append(geometry=geometry, attributes=attributes)
     return 0
