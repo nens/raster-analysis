@@ -2,9 +2,8 @@
 """
 Calculate zonal statistics of raster store for a shapefile.
 
-Special stats worth mentioning are:
-    - count: The amount of pixels with data
-    - size: The total amount of pixels
+Special stats worth mentioning are 'count' (the amount of pixels with
+data), 'size' (the total amount of pixels) and 'p<n>' (the n-percentile).
 """
 
 from __future__ import print_function
@@ -29,10 +28,6 @@ gdal.UseExceptions()
 ogr.UseExceptions()
 
 logger = logging.getLogger(__name__)
-
-
-POINT = b'POINT({} {})'
-KEY = b'height'
 
 
 def get_parser():
