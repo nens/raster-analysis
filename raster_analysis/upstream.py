@@ -205,8 +205,9 @@ class Case(object):
             data = self.store.get_data_direct(width=width,
                                               height=height,
                                               geometry=polygon)
-            array = np.ma.masked_equal(data['values'],
-                                       data['no_data_value']).ravel()
+            array = np.ma.masked_equal(
+                data['values'], data['no_data_value'],
+            ).ravel().compressed()
 
             #level = array.min().item()
             #if -3.5 < level < -3.4:
@@ -221,7 +222,7 @@ class Case(object):
             try:
                 yield point, array[array.argsort()[1]].item()
             except IndexError:
-                continue
+                yield point, -9999
 
 
 def command(polygon_path, linestring_path,
