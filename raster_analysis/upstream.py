@@ -222,7 +222,7 @@ class Case(object):
             try:
                 yield point, array[array.argsort()[1]].item()
             except IndexError:
-                yield point, -9999
+                continue
 
 
 def command(polygon_path, linestring_path,
