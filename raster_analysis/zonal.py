@@ -4,8 +4,8 @@ Calculate zonal statistics of raster store for a shapefile.
 
 Special stats worth mentioning are 'count' (the amount of pixels
 with data), 'size' (the total amount of pixels) and 'p<n>' (the
-n-percentile). If the statistic is unsuitable as field name in the
-target shape, a different column can be specified like "mycolumn:count"
+n-percentile). If the statistic is unsuitable as field name in the target
+shape, a different field name can be specified like "myfield:count"
 instead of simply "count".
 """
 
