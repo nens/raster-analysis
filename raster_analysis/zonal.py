@@ -2,8 +2,11 @@
 """
 Calculate zonal statistics of raster store for a shapefile.
 
-Special stats worth mentioning are 'count' (the amount of pixels with
-data), 'size' (the total amount of pixels) and 'p<n>' (the n-percentile).
+Special stats worth mentioning are 'count' (the amount of pixels
+with data), 'size' (the total amount of pixels) and 'p<n>' (the
+n-percentile). If the statistic is unsuitable as field name in the
+target shape, a different column can be specified like "mycolumn:count"
+instead of simply "count".
 """
 
 from __future__ import print_function
@@ -92,14 +95,21 @@ def command(source_path, store_path, target_path, statistics, partial):
     percentile = None
     pattern = re.compile('(p)([0-9]+)')
     for statistic in statistics:
+        # allow for different column name
+        try:
+            column, statistic = statistic.split(':')
+        except ValueError:
+            column = statistic
+
+        # determine the action
         match = pattern.match(statistic)
         if pattern.match(statistic):
             percentile = int(match.groups()[1])
-            actions[statistic] = 'percentile', [percentile]
+            actions[column] = 'percentile', [percentile]
         elif statistic == 'value':
-            actions[statistic] = 'item', []
+            actions[column] = 'item', []
         else:
-            actions[statistic] = statistic, []
+            actions[column] = statistic, []
 
     target = common.Target(
         path=target_path,

@@ -61,19 +61,24 @@ class Target(object):
 
         # create or replace shape
         driver = ogr.GetDriverByName(b'ESRI Shapefile')
-        #if os.path.exists(path):
-            #driver.DeleteDataSource(str(path))
         self.dataset = driver.CreateDataSource(str(path))
         layer_name = os.path.basename(path)
         self.layer = self.dataset.CreateLayer(layer_name, template_sr)
 
-        # Copy field definitions
+        # Copy field definitions, remember names
+        existing = []
         layer_defn = template_layer.GetLayerDefn()
         for i in range(layer_defn.GetFieldCount()):
-            self.layer.CreateField(layer_defn.GetFieldDefn(i))
+            field_defn = layer_defn.GetFieldDefn(i)
+            existing.append(field_defn.GetName().lower())
+            self.layer.CreateField(field_defn)
 
         # Add extra fields
         for attribute in attributes:
+            if attribute.lower() in existing:
+                raise NameError(('field named "{}" already '
+                                 'exists in template').format(attribute))
+
             self.layer.CreateField(ogr.FieldDefn(str(attribute), ogr.OFTReal))
         self.layer_defn = self.layer.GetLayerDefn()
 

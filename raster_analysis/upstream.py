@@ -209,15 +209,15 @@ class Case(object):
                 data['values'], data['no_data_value'],
             ).ravel().compressed()
 
-            #level = array.min().item()
-            #if -3.5 < level < -3.4:
-                #from raster_analysis import plots
-                #plot = plots.Plot()
-                #plot.add_array(array, extent=polygon.GetEnvelope())
-                #plot.add_geometries(point, polygon, self.polygon)
-                #plot.show()
-                #import ipdb
-                #ipdb.set_trace()
+            # level = array.min().item()
+            # if -3.5 < level < -3.4:
+            #     from raster_analysis import plots
+            #     plot = plots.Plot()
+            #     plot.add_array(array, extent=polygon.GetEnvelope())
+            #     plot.add_geometries(point, polygon, self.polygon)
+            #     plot.show()
+            #     import ipdb
+            #     ipdb.set_trace()
 
             try:
                 yield point, array[array.argsort()[1]].item()
