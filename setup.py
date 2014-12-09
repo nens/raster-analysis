@@ -39,6 +39,7 @@ setup(name='raster-analysis',
           'console_scripts': [
               'median = raster_analysis.median:main',
               'zonal = raster_analysis.zonal:main',
+              'centroid = raster_analysis.centroid:main',
               'upstream = raster_analysis.upstream:main',
           ]},
       )
