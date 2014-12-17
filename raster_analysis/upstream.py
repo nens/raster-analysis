@@ -273,7 +273,7 @@ def command(polygon_path, linestring_path, store_paths,
             # do
             try:
                 points, levels = zip(*list(case.get_levels(False)))
-            except TypeError:
+            except (TypeError, ValueError):
                 # there are no levels for this case
                 continue
 
