@@ -73,6 +73,13 @@ def get_parser():
         help='Minimum upstream search distance (default 15.0).',
     )
     parser.add_argument(
+        '-m', '--multiplier',
+        type=float,
+        default=1.0,
+        metavar='',
+        help='Multiplier for distance to polygon (default 1.0).',
+    )
+    parser.add_argument(
         '-s', '--separation',
         type=float,
         default=1.0,
@@ -123,10 +130,12 @@ def get_geotransform(size, envelope):
 
 
 class Case(object):
-    def __init__(self, store, polygon, distance, separation, linestring):
+    def __init__(self, store, polygon, distance,
+                 multiplier, separation, linestring):
         self.store = store
         self.polygon = polygon
         self.distance = distance
+        self.multiplier = multiplier
         self.linestring = linestring
         self.separation = separation
         self.sr = linestring.GetSpatialReference()
@@ -179,12 +188,14 @@ class Case(object):
         for point, direction in self.get_sites(reverse):
             if not self.polygon.Contains(point):
                 continue
-            radius = max(self.distance, 2 * point.Distance(self.polygon))
+            radius = max(self.distance,
+                         self.multiplier * point.Distance(self.polygon))
             circle = point.Buffer(radius)
             rectangle = self.make_rectangle(point=point,
                                             radius=radius,
                                             direction=direction)
             intersection = circle.Intersection(rectangle)
+
             yield point, self.polygon.Intersection(intersection)
 
     def get_levels(self, reverse):
@@ -225,8 +236,8 @@ class Case(object):
                 continue
 
 
-def command(polygon_path, linestring_path,
-            store_paths, grow, distance, separation, path, partial):
+def command(polygon_path, linestring_path, store_paths,
+            grow, distance, multiplier, separation, path, partial):
     """ Main """
     linestring_features = common.Source(linestring_path)
     store = MinimumStore(store_paths)
@@ -253,13 +264,14 @@ def command(polygon_path, linestring_path,
             case = Case(store=store,
                         polygon=polygon,
                         distance=distance,
+                        multiplier=multiplier,
                         separation=separation,
                         linestring=linestring)
 
             # do
             try:
                 points, levels = zip(*list(case.get_levels(False)))
-            except:
+            except TypeError:
                 # there are no levels for this case
                 continue
 
