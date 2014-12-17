@@ -179,7 +179,7 @@ class Case(object):
         for point, direction in self.get_sites(reverse):
             if not self.polygon.Contains(point):
                 continue
-            radius = max(self.distance, point.Distance(self.polygon))
+            radius = max(self.distance, 2 * point.Distance(self.polygon))
             circle = point.Buffer(radius)
             rectangle = self.make_rectangle(point=point,
                                             radius=radius,
