@@ -223,14 +223,16 @@ class Case(object):
             ).ravel().compressed()
 
             # level = array.min().item()
-            # if -3.5 < level < -3.4:
+            # print(level)
+            # if level < -4.8:
             #     from raster_analysis import plots
             #     plot = plots.Plot()
-            #     plot.add_array(array, extent=polygon.GetEnvelope())
-            #     plot.add_geometries(point, polygon, self.polygon)
+            #     ma = np.ma.masked_equal(data['values'],
+            #                             data['no_data_value'])
+            #     plot.add_array(ma[0], extent=polygon.GetEnvelope())
+            #     #plot.add_geometries(point, polygon, self.polygon)
+            #     plot.add_geometries(point, polygon)
             #     plot.show()
-            #     import ipdb
-            #     ipdb.set_trace()
 
             try:
                 yield point, array[array.argsort()[1]].item()
@@ -283,7 +285,7 @@ def command(polygon_path, linestring_path, store_paths,
                 first = levels[:index]
                 last = levels[index:]
                 if sum(first) / len(first) > sum(last) / len(last):
-                    points, levels = zip(*list(case.get_levels(False)))
+                    points, levels = zip(*list(case.get_levels(True)))
 
             # save
             attributes = dict(linestring_feature.items())
