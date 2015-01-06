@@ -285,7 +285,12 @@ def command(polygon_path, linestring_path, store_paths,
                 first = levels[:index]
                 last = levels[index:]
                 if sum(first) / len(first) > sum(last) / len(last):
-                    points, levels = zip(*list(case.get_levels(True)))
+                    # do reverse
+                    try:
+                        points, levels = zip(*list(case.get_levels(True)))
+                    except (TypeError, ValueError):
+                        # there are no levels for this case
+                        continue
 
             # save
             attributes = dict(linestring_feature.items())
