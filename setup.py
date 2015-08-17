@@ -9,7 +9,9 @@ long_description = '\n\n'.join([
     ])
 
 install_requires = [
+    'gdal',
     'raster-store',
+    'scipy',
     'setuptools',
     ],
 
