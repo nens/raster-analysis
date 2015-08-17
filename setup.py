@@ -12,6 +12,7 @@ install_requires = [
     'gdal',
     'raster-store',
     'scipy',
+    'numpy>=1.8.2',
     'setuptools',
     ],
 
