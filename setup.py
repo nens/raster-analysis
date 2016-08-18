@@ -44,5 +44,6 @@ setup(name='raster-analysis',
               'zonal = raster_analysis.zonal:main',
               'centroid = raster_analysis.centroid:main',
               'upstream = raster_analysis.upstream:main',
+              'lextract = raster_analysis.lextract:main',
           ]},
       )
