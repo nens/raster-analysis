@@ -194,7 +194,7 @@ def command(shape_path, store_path, target_path, cellsize, time):
     """
     # process store
     store = stores.get(store_path)
-    dtype = np.dtype(store.dtype)
+    dtype = np.dtype(store.dtype).type
     fillvalue = store.fillvalue
 
     # process shape
