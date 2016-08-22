@@ -16,7 +16,7 @@ How to calculate interpolated depth
 
     $ store-put dem.tif raster/storage/bathymetry
 
-4. Check available period and frames using 'store-info'* ::
+4. Check available period and frames using 'store-info'*::
 
     $ store-info raster/config/s1-dtri
 
