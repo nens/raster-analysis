@@ -36,4 +36,4 @@ A note on the available configurations:
 - raster/config/depth-quad: s1-minus-bathymetry, per quad, masked when less than zero.
 - raster/config/depth-dtri: s1-minus-bathymetry, interpolated, masked when less than zero.
 
-* store-3di, store-put and store-info are commands from the nens/raster-store library.
+*store-3di, store-put and store-info are commands from the nens/raster-store library.
