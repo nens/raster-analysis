@@ -19,7 +19,7 @@ How to calculate interpolated depth
 
     $ store-info raster/config/s1-dtri
 
-5. Now you are ready to create (interpolated) geotiffs for 3Di
+5. Now you are ready to create (interpolated) geotiffs for your 3Di
    result. You need a shapefile to provide the script with an area of
    interest. For example::
 
