@@ -9,6 +9,8 @@ from __future__ import division
 
 import argparse
 import collections
+import logging
+import sys
 
 from osgeo import gdal_array
 import numpy as np
@@ -254,6 +256,7 @@ def command(shape_path, store_path, target_path, cellsize, time):
 def get_parser():
     """ Return argument parser. """
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('-v', '--verbose', action='store_true')
     # main
     parser.add_argument('shape_path',
                         metavar='SHAPE')
@@ -275,8 +278,20 @@ def get_parser():
 
 def main():
     """ Call command with args from parser. """
+    # logging
     kwargs = vars(get_parser().parse_args())
+    if kwargs.pop('verbose'):
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    logging.basicConfig(stream=sys.stderr, level=level, format='%(message)s')
+
+    # run
     command(**kwargs)
+
+
+if __name__ == '__main__':
+    exit(main())
 
 
 if __name__ == '__main__':

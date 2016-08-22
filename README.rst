@@ -1,43 +1,34 @@
-raster-analysis
-==========================================
+How to calculate interpolated depth
+===================================
 
-Introduction
+1. Know your bathymetry resolution::
 
-Usage, etc.
+    $ gdalinfo dem.tif | grep 'Pixel Size'
 
+2. Use it with the 'store-3di' command to build a special interplating
+   raster-store-like object from the netcdf the at the correct resolution::
 
-Post-nensskel setup TODO
-------------------------
+    $ mkdir raster
+    $ store-3di -b raster/storage/bathymetry -c 2 2 subgrid_map.nc raster/storage raster/config
 
-Here are some instructions on what to do after you've created the project with
-nensskel.
+3. Build an ordinary raster-store for the bathymetry::
 
-- Fill in a short description on https://github.com/lizardsystem/raster-analysis or
-  https://github.com/nens/raster-analysis if you haven't done so already.
+    $ store-put dem.tif raster/storage/bathymetry
 
-- Use the same description in the ``setup.py``'s "description" field.
+4. Check available period and frames using 'store-info'::
 
-- Fill in your username and email address in the ``setup.py``, see the
-  ``TODO`` fields. If you use it, also check the ``bower.json``.
+    $ store-info raster/config/s1-dtri
 
-- Also add your name to ``CREDITS.rst``. It is open source software, so you
-  should claim credit!
+5. Now you are ready to create (interpolated) geotiffs for 3Di result. For example::
 
-- Check https://github.com/nens/raster-analysis/settings/collaboration if the team
-  "Nelen & Schuurmans" has access.
+    $ lextract -c 5 5 -t 2014-07-28T18:00:00 shape raster/config/s1-quad.json output/s1-quad.tif
+    $ lextract -c 2 2 -t 2014-07-28T18:00:00 shape raster/config/s1-dtri.json output/s1-dtri.tif
+    $ lextract -c 1 1 -t 2014-07-28T18:00:00 shape raster/config/depth-dtri.json output/depth-dtri.tif
 
-- Add a new jenkins job at
-  http://buildbot.lizardsystem.nl/jenkins/view/djangoapps/newJob or
-  http://buildbot.lizardsystem.nl/jenkins/view/libraries/newJob . Job name
-  should be "raster-analysis", make the project a copy of the existing "lizard-wms"
-  project (for django apps) or "nensskel" (for libraries). On the next page,
-  change the "github project" to ``https://github.com/nens/raster-analysis/`` and
-  "repository url" fields to ``git@github.com:nens/raster-analysis.git`` (you might
-  need to replace "nens" with "lizardsystem"). The rest of the settings should
-  be OK.
+A note on the available outputs:
 
-- The project is prepared to be translated with Lizard's
-  `Transifex <http://translations.lizard.net/>`_ server. For details about
-  pushing translation files to and fetching translation files from the
-  Transifex server, see the ``nens/translations`` `documentation
-  <https://github.com/nens/translations/blob/master/README.rst>`_.
+- output/bathymetry: The bathymetry
+- output/s1-quad:    the s1 variable per quad
+- output/s1-dtri:    the s1 variable interpolated
+- output/depth-quad: s1-minus-bathymetry, per quad, masked when less than zero.
+- output/depth-dtri: s1-minus-bathymetry, inteprolated, masked when less than zero.
