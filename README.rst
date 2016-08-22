@@ -5,18 +5,17 @@ How to calculate interpolated depth
 
     $ gdalinfo dem.tif | grep 'Pixel Size'
 
-2. Use it with the 'store-3di' command* to build a special interpolating
+2. Use it with the 'store-3di'\* command to build a special interpolating
    raster-store-like object from the netcdf the at the correct resolution::
 
     $ mkdir raster
     $ store-3di -b raster/storage/bathymetry -c 2 subgrid_map.nc raster/storage raster/config
 
-3. Build an ordinary raster-store for the bathymetry using the 'store-put'
-   command*, also from the nens/raster-store library::
+3. Build an ordinary raster-store for the bathymetry using 'store-put'\*::
 
     $ store-put dem.tif raster/storage/bathymetry
 
-4. Check available period and frames using 'store-info'*::
+4. Check the available period and frames using 'store-info'\*::
 
     $ store-info raster/config/s1-dtri
 
@@ -36,4 +35,4 @@ A note on the available configurations:
 - raster/config/depth-quad: s1-minus-bathymetry, per quad, masked when less than zero.
 - raster/config/depth-dtri: s1-minus-bathymetry, interpolated, masked when less than zero.
 
-*store-3di, store-put and store-info are commands from the nens/raster-store library.
+\*store-3di, store-put and store-info are commands from the nens/raster-store library.
