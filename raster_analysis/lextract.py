@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 # (c) Nelen & Schuurmans, see LICENSE.rst.
-""" Extract layers from a raster store using a geometry. """
+"""
+Extract layers from a raster store using a geometry. For instructions
+to do this from a 3Di result, have a look at the README:
+
+https://github.com/nens/raster-analysis/blob/master/README.rst
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
