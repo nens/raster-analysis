@@ -43,7 +43,7 @@ def get_projection(sr):
                                   code=sr.GetAuthorityCode(key))
 
 
-def create_dataset(geometry, cellsize, dtype, path):
+def create_dataset(geometry, cellsize, fillvalue, dtype, path):
         """ The big sparse target dateset"""
         # properties
         a, b, c, d = cellsize[0], 0.0, 0.0, -cellsize[1]
@@ -57,7 +57,7 @@ def create_dataset(geometry, cellsize, dtype, path):
 
         # data type from store, no data value max of that type
         data_type = gdal_array.NumericTypeCodeToGDALTypeCode(dtype)
-        no_data_value = np.finfo('f4').max.item()
+        no_data_value = fillvalue
 
         # create
         options = ['TILED=YES',
@@ -171,6 +171,23 @@ class Index(object):
                        geo_transform=geo_transform)
 
 
+def burn(dataset, geometry, value):
+    """ Burn value where geometry is into dataset. """
+    sr = geometry.GetSpatialReference()
+
+    # put geometry into temporary layer
+    datasource = DRIVER_OGR_MEMORY.CreateDataSource('')
+    layer = datasource.CreateLayer(str(''), sr)
+    layer_defn = layer.GetLayerDefn()
+    feature = ogr.Feature(layer_defn)
+    feature.SetGeometry(geometry)
+    layer.CreateFeature(feature)
+
+    # burn no data
+    burn_values = [value]
+    gdal.RasterizeLayer(dataset, [1], layer, burn_values=burn_values)
+
+
 def command(shape_path, store_path, target_path, cellsize, time):
     """
     Prepare and extract the first feature of the first layer.
@@ -178,6 +195,7 @@ def command(shape_path, store_path, target_path, cellsize, time):
     # process store
     store = stores.get(store_path)
     dtype = np.dtype(store.dtype)
+    fillvalue = store.fillvalue
 
     # process shape
     datasource = ogr.Open(shape_path)
@@ -190,7 +208,8 @@ def command(shape_path, store_path, target_path, cellsize, time):
     target = create_dataset(dtype=dtype,
                             path=target_path,
                             geometry=geometry,
-                            cellsize=cellsize)
+                            cellsize=cellsize,
+                            fillvalue=fillvalue)
 
     # prepare
     gdal.TermProgress_nocb(0)
@@ -214,26 +233,16 @@ def command(shape_path, store_path, target_path, cellsize, time):
         kwargs = {'projection': sr.ExportToWkt(),
                   'geo_transform': tile.geo_transform,
                   'no_data_value': no_data_value}
+
         with datasets.Dataset(array, **kwargs) as source:
 
-            # determine 'outside'
+            # set pixels outside geometry to 'no data'
             outside = tile.polygon.Difference(geometry)
-            outside.AssignSpatialReference(sr)
-
-            # put it in temporary layer
-            datasource = DRIVER_OGR_MEMORY.CreateDataSource('')
-            layer = datasource.CreateLayer(str(''), sr)
-            layer_defn = layer.GetLayerDefn()
-            feature = ogr.Feature(layer_defn)
-            feature.SetGeometry(outside)
-            layer.CreateFeature(feature)
-
-            # burn no data
-            burn_values = [no_data_value]
-            gdal.RasterizeLayer(source, [1], layer, burn_values=burn_values)
+            burn(dataset=source, geometry=outside, value=no_data_value)
 
             # write to target
             p1, q1 = tile.origin
+            DRIVER_GDAL_MEM.CreateCopy('', source)
             target.WriteRaster(
                 p1, q1, tile.width, tile.height,
                 source.ReadRaster(0, 0, tile.width, tile.height),
