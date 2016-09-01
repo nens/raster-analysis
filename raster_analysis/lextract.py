@@ -25,6 +25,7 @@ from raster_store import datasets
 
 from raster_analysis.common import gdal
 from raster_analysis.common import ogr
+from raster_analysis.common import osr
 
 
 DRIVER_OGR_MEMORY = ogr.GetDriverByName(str('Memory'))
@@ -46,8 +47,10 @@ Tile = collections.namedtuple('Tile', ['width',
 def get_projection(sr):
     """ Return simple userinput string for spatial reference, if any. """
     key = str('GEOGCS') if sr.IsGeographic() else str('PROJCS')
-    return '{name}:{code}'.format(name=sr.GetAuthorityName(key),
-                                  code=sr.GetAuthorityCode(key))
+    name, code = sr.GetAuthorityName(key), sr.GetAuthorityCode(key)
+    if name is None or code is None:
+        return None
+    return '{name}:{code}'.format(name=name, code=code)
 
 
 def create_dataset(geometry, cellsize, fillvalue, dtype, path):
@@ -210,6 +213,10 @@ def command(shape_path, store_path, target_path, cellsize, time):
 
     feature = layer[0]
     geometry = feature.geometry()
+    sr = get_projection(geometry.GetSpatialReference())
+    if sr is None:
+        print('Error: EPSG projection code missing from shape.')
+        exit()
 
     # process target
     target = create_dataset(dtype=dtype,
@@ -221,7 +228,6 @@ def command(shape_path, store_path, target_path, cellsize, time):
     # prepare
     gdal.TermProgress_nocb(0)
     index = Index(target, geometry)
-    sr = layer.GetSpatialRef()
     no_data_value = target.GetRasterBand(1).GetNoDataValue()
 
     # work
@@ -237,7 +243,7 @@ def command(shape_path, store_path, target_path, cellsize, time):
 
         # make source
         array = data['values']
-        kwargs = {'projection': sr.ExportToWkt(),
+        kwargs = {'projection': osr.GetUserInputAsWKT(str(sr)),
                   'geo_transform': tile.geo_transform,
                   'no_data_value': no_data_value}
 
