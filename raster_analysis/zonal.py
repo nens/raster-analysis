@@ -121,7 +121,7 @@ def command(source_path, store_path, target_path, statistics, partial):
         # retrieve raster data
         geometry = source_feature.geometry()
         kwargs = get_kwargs(geometry)
-        data = store.get_data_direct(geometry, **kwargs)
+        data = store.get_data(geometry, **kwargs)
         masked = np.ma.masked_equal(data['values'],
                                     data['no_data_value'])
         compressed = masked.compressed()
