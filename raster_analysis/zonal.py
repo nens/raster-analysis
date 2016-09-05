@@ -135,7 +135,7 @@ def command(source_path, store_path, target_path, statistics, partial):
                 else:
                     value = getattr(np, action)(compressed, *args)
                 value = np.nan if np.ma.is_masked(value) else value
-            except ValueError:
+            except (ValueError, IndexError):
                 value = np.nan
             attributes[column] = value
 
