@@ -28,6 +28,7 @@ How to calculate interpolated depth
     $ lextract -c 1 1 -t 2014-07-28T18:00:00 shape raster/config/depth-dtri output/depth-dtri.tif
 
 A note on the available configurations:
+
 - raster/config/bathymetry:     the bathymetry
 - raster/config/s1-quad:        the waterlevel (s1) per quad
 - raster/config/s1-dtri:        the waterlevel (s1) per quad, interpolated
@@ -35,6 +36,7 @@ A note on the available configurations:
 - raster/config/depth-dtri:     waterdepth (s1 - bathymetry) per quad, interpolated
 
 Also available are the variables derived from the per-quad maxima of the waterlevel:
+
 - raster/config/s1-max-quad:    maximum waterlevel (s1) per quad
 - raster/config/s1-max-dtri:    maximum waterlevel (s1) per quad, interpolated
 - raster/config/depth-max-quad: maximum waterdepth (s1 - bathymetry) per quad
