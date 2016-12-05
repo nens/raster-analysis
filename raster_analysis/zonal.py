@@ -24,7 +24,7 @@ from osgeo import gdal
 from osgeo import ogr
 import numpy as np
 
-from raster_store import stores
+from raster_store import load
 from raster_analysis import common
 
 gdal.UseExceptions()
@@ -88,7 +88,7 @@ def command(source_path, store_path, target_path, statistics, partial):
     else:
         source_features = common.Source(source_path).select(partial)
 
-    store = stores.get(store_path)
+    store = load(store_path)
 
     # prepare statistics gathering
     actions = {}  # column_name: func_name, args

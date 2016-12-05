@@ -20,7 +20,7 @@ import sys
 from osgeo import gdal_array
 import numpy as np
 
-from raster_store import stores
+from raster_store import load
 from raster_store import datasets
 
 from raster_analysis.common import gdal
@@ -203,7 +203,7 @@ def command(shape_path, store_path, target_path, cellsize, time):
     Prepare and extract the first feature of the first layer.
     """
     # process store
-    store = stores.get(store_path)
+    store = load(store_path)
     dtype = np.dtype(store.dtype).type
     fillvalue = store.fillvalue
 

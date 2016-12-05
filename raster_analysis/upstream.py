@@ -18,7 +18,7 @@ from osgeo import gdal
 from osgeo import ogr
 import numpy as np
 
-from raster_store import stores
+from raster_store import load
 from raster_analysis import common
 
 gdal.UseExceptions()
@@ -100,7 +100,7 @@ def point2geometry(point, sr):
 
 class MinimumStore(object):
     def __init__(self, paths):
-        self.stores = [stores.get(path) for path in paths]
+        self.stores = [load(path) for path in paths]
 
     def get_data_direct(self, *args, **kwargs):
         data = [store.get_data_direct(*args,
