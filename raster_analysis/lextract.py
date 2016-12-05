@@ -294,7 +294,7 @@ def main():
     if kwargs.pop('verbose'):
         level = logging.DEBUG
     else:
-        level = logging.INFO
+        level = logging.WARN
     logging.basicConfig(stream=sys.stderr, level=level, format='%(message)s')
 
     # run
