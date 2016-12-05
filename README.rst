@@ -5,15 +5,15 @@ How to calculate interpolated depth
 
     $ gdalinfo dem.tif | grep 'Pixel Size'
 
-2. Use it with the 'store-3di'\* command to build a special interpolating
-   raster-store-like object from the netcdf the at the correct resolution::
+2. Build an ordinary raster-store for the bathymetry using 'store-put'\*::
 
     $ mkdir raster
-    $ store-3di -b raster/storage/bathymetry -c 2 subgrid_map.nc raster/storage raster/config
+    $ store-put dem.tif raster/bathymetry
 
-3. Build an ordinary raster-store for the bathymetry using 'store-put'\*::
+3. Use it with the 'store-3di'\* command to build a special interpolating
+   raster-store-like object from the netcdf the at the correct resolution::
 
-    $ store-put dem.tif raster/storage/bathymetry
+    $ store-3di -b raster/bathymetry -c 2 subgrid_map.nc raster/storage raster/config dem.tif
 
 4. Check the available period and frames using 'store-info'\*::
 
@@ -41,5 +41,12 @@ Also available are the variables derived from the per-quad maxima of the waterle
 - raster/config/s1-max-dtri:    maximum waterlevel (s1) per quad, interpolated
 - raster/config/depth-max-quad: maximum waterdepth (s1 - bathymetry) per quad
 - raster/config/depth-max-dtri: maximum waterdepth (s1 - bathymetry) per quad, interpolated
+
+Here are some more exotic derivatives:
+
+- raster/config/arrival:            Arrival time in seconds
+- raster/config/rise-velocity-quad: Rise velocity in meters per second
+- raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
+- raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
 \*store-3di, store-put and store-info are commands from the nens/raster-store library.
