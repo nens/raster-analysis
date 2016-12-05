@@ -29,10 +29,17 @@ How to calculate interpolated depth
 
 A note on the available configurations:
 
-- raster/config/bathymetry: The bathymetry
-- raster/config/s1-quad:    the s1 variable per quad
-- raster/config/s1-dtri:    the s1 variable interpolated
-- raster/config/depth-quad: s1-minus-bathymetry, per quad, masked when less than zero.
-- raster/config/depth-dtri: s1-minus-bathymetry, interpolated, masked when less than zero.
+- raster/config/bathymetry:     the bathymetry
+- raster/config/s1-quad:        the waterlevel (s1) per quad
+- raster/config/s1-dtri:        the waterlevel (s1) per quad, interpolated
+- raster/config/depth-quad:     waterdepth (s1 - bathymetry) per quad
+- raster/config/depth-dtri:     waterdepth (s1 - bathymetry) per quad, interpolated
+
+Also available are the variables derived from the per-quad maxima of the waterlevel:
+
+- raster/config/s1-max-quad:    maximum waterlevel (s1) per quad
+- raster/config/s1-max-dtri:    maximum waterlevel (s1) per quad, interpolated
+- raster/config/depth-max-quad: maximum waterdepth (s1 - bathymetry) per quad
+- raster/config/depth-max-dtri: maximum waterdepth (s1 - bathymetry) per quad, interpolated
 
 \*store-3di, store-put and store-info are commands from the nens/raster-store library.
