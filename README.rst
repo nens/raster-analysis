@@ -5,23 +5,23 @@ How to calculate interpolated depth
 
     $ gdalinfo dem.tif | grep 'Pixel Size'
 
-2. Build an ordinary raster-store for the bathymetry using 'store-put'\*::
+2. Use it with the 'store-3di'\* command to build a set of derived 3Di
+   results, such as interpolated depth, maximum waterlevel, arrival times
+   and many more::
 
     $ mkdir raster
-    $ store-put dem.tif raster/bathymetry
+    $ store-3di subgrid_map.nc dem.tif raster/storage raster/config -c 2 -a
 
-3. Use it with the 'store-3di'\* command to build a special interpolating
-   raster-store-like object from the netcdf the at the correct resolution::
+   here optional parameter '-c 2' indicates a cellsize of 2 and '-a'
+   enables the costly calculation of arrival times. Cellsize determines
+   the level of detail for interpolated variables and the arrival times.
 
-    $ store-3di -b raster/bathymetry -c 2 subgrid_map.nc raster/storage raster/config dem.tif
-
-4. Check the available period and frames using 'store-info'\*::
+3. Check the available period and frames using 'store-info'\*::
 
     $ store-info raster/config/s1-dtri
 
-5. Now you are ready to create (interpolated) geotiffs for your 3Di
-   result. You need a shapefile to provide the script with an area of
-   interest. For example::
+4. Now you are ready to create geotiffs for your 3Di result. You need
+   a shapefile to provide the script with an area of interest. For example::
 
     $ mkdir output
     $ lextract -c 5 5 -t 2014-07-28T18:00:00 shape raster/config/s1-quad output/s1-quad.tif
@@ -44,9 +44,10 @@ Also available are the variables derived from the per-quad maxima of the waterle
 
 Here are some more exotic derivatives:
 
-- raster/config/arrival:            Arrival time in seconds
+- raster/config/arrival:            Arrival time in seconds\*\*
 - raster/config/rise-velocity-quad: Rise velocity in meters per second
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
 \*store-3di, store-put and store-info are commands from the nens/raster-store library.
+\*\*only with the '-a' or '--arrival' option.
