@@ -49,6 +49,6 @@ Here are some more exotic derivatives:
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
-\*store-3di, store-put and store-info are commands from the nens/raster-store library.
+\*store-3di and store-info are commands from the nens/raster-store library.
 
 \*\*only with the '-a' or '--arrival' option.
