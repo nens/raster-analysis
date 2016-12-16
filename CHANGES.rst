@@ -7,7 +7,7 @@ Changelog of raster-analysis
 
 - Loglevel for lextract defaults to warn.
 
-- Bump raster-store to 2.5.1, alters store-3di script.
+- Bump raster-store to 2.5.2, alters store-3di script.
 
 
 0.1 (2016-12-05)
