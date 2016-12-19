@@ -44,7 +44,7 @@ Also available are the variables derived from the per-quad maxima of the waterle
 
 Here are some more exotic derivatives:
 
-- raster/config/arrival:            Arrival time in seconds\*\*
+- raster/config/depth-first-dtri:   Arrival time in seconds\*\*
 - raster/config/rise-velocity-quad: Rise velocity in meters per second
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
