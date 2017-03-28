@@ -10,11 +10,13 @@ How to calculate interpolated depth
    and many more::
 
     $ mkdir raster
-    $ store-3di subgrid_map.nc dem.tif raster/storage raster/config -c 2 -a
+    $ store-3di subgrid_map.nc dem.tif raster/storage raster/config -c 2 -a -f flow_aggregate.nc
 
-   here optional parameter '-c 2' indicates a cellsize of 2 and '-a'
-   enables the costly calculation of arrival times. Cellsize determines
-   the level of detail for interpolated variables and the arrival times.
+   here the optional parameter '-c 2' indicates a cellsize of 2 and '-a'
+   enables the costly calculation of arrival times. Cellsize determines the
+   level of detail for interpolated variables and the arrival times. Any time
+   aggregations found in the optional flow_aggregate file will be available in
+   the results as well.
 
 3. Check the available period and frames using 'store-info'\*::
 
