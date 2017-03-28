@@ -49,6 +49,17 @@ Here are some more exotic derivatives:
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
+Furthermore, when supplying a flow-aggregate.nc file\*\*\*, a numer of
+extra wrappers will be made available, depending on the contents of that
+file. These will be (where [stat] could be something like 'avg':
+
+- raster/config/s1_[stat]-max-quad:    maximum waterlevel (s1) per quad
+- raster/config/s1_[stat]-max-dtri:    maximum waterlevel (s1) per quad, interpolated
+- raster/config/depth_[stat]-max-quad: maximum waterdepth (s1 - bathymetry) per quad
+- raster/config/depth_[stat]-max-dtri: maximum waterdepth (s1 - bathymetry) per quad, interpolated
+
 \*store-3di and store-info are commands from the nens/raster-store library.
 
 \*\*only with the '-a' or '--arrival' option.
+
+\*\*\*with the '-f' or '--flow-aggregate' option.
