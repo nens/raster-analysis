@@ -51,7 +51,7 @@ Here are some more exotic derivatives:
 
 Furthermore, when supplying a flow-aggregate.nc file\*\*\*, a numer of
 extra wrappers will be made available, depending on the contents of that
-file. These will be (where [stat] could be something like 'avg':
+file. These will be (where [stat] could be something like 'avg'):
 
 - raster/config/s1_[stat]-max-quad:    maximum waterlevel (s1) per quad
 - raster/config/s1_[stat]-max-dtri:    maximum waterlevel (s1) per quad, interpolated
