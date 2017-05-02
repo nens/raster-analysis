@@ -5,9 +5,11 @@ Changelog of raster-analysis
 0.2 (unreleased)
 ----------------
 
-- Loglevel for lextract defaults to warn.
+- Bumped raster-store to 2.9.2.
 
-- Bump raster-store to 2.9.
+- Set log level for lextract defaults to warn.
+
+- Fixed version mismatch in analysis upstream.
 
 
 0.1 (2016-12-05)

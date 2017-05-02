@@ -102,9 +102,8 @@ class MinimumStore(object):
     def __init__(self, paths):
         self.stores = [load(path) for path in paths]
 
-    def get_data_direct(self, *args, **kwargs):
-        data = [store.get_data_direct(*args,
-                                      **kwargs) for store in self.stores]
+    def get_data(self, *args, **kwargs):
+        data = [store.get_data(*args, **kwargs) for store in self.stores]
         array = np.ma.array(
             [np.ma.masked_equal(d['values'],
                                 d['no_data_value']) for d in data],
@@ -215,9 +214,9 @@ class Case(object):
                 )
 
             # get data from store
-            data = self.store.get_data_direct(width=width,
-                                              height=height,
-                                              geometry=polygon)
+            data = self.store.get_data(width=width,
+                                       height=height,
+                                       geometry=polygon)
             array = np.ma.masked_equal(
                 data['values'], data['no_data_value'],
             ).ravel().compressed()
