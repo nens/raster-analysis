@@ -10,9 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
-import logging
 import math
-import sys
 
 from osgeo import gdal
 from osgeo import ogr
@@ -23,9 +21,6 @@ from raster_analysis import common
 
 gdal.UseExceptions()
 ogr.UseExceptions()
-
-logger = logging.getLogger(__name__)
-
 
 POINT = b'POINT({} {})'
 KEY = b'height'
@@ -303,5 +298,4 @@ def command(polygon_path, linestring_path, store_paths,
 
 def main():
     """ Call command with args from parser. """
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     return command(**vars(get_parser().parse_args()))
