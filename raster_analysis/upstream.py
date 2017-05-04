@@ -214,9 +214,11 @@ class Case(object):
                 )
 
             # get data from store
-            data = self.store.get_data(width=width,
-                                       height=height,
-                                       geometry=polygon)
+            data = self.store.get_data(
+                geom=polygon,
+                width=width,
+                height=height,
+            )
             array = np.ma.masked_equal(
                 data['values'], data['no_data_value'],
             ).ravel().compressed()
