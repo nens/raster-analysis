@@ -40,7 +40,7 @@ A note on the available configurations:
 Also available are the variables derived from the per-quad maxima of the waterlevel:
 
 - raster/config/s1-max-quad:    temporal maximum of s1-quad
-- raster/config/s1-max-dtri:    temporal maximum of s1-max-dtri
+- raster/config/s1-max-dtri:    temporal maximum of s1-dtri
 - raster/config/depth-max-quad: temporal maximum of depth-quad
 - raster/config/depth-max-dtri: temporal maximum of depth-dtri
 
