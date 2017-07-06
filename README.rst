@@ -31,18 +31,18 @@ How to calculate interpolated depth
 
 A note on the available configurations:
 
-- raster/config/bathymetry:     the bathymetry
-- raster/config/s1-quad:        the waterlevel (s1) per quad
-- raster/config/s1-dtri:        the waterlevel (s1) per quad, interpolated
-- raster/config/depth-quad:     waterdepth (s1 - bathymetry) per quad
-- raster/config/depth-dtri:     waterdepth (s1 - bathymetry) per quad, interpolated
+- raster/config/bathymetry:     bathymetry
+- raster/config/s1-quad:        waterlevel (s1) with original quad layout
+- raster/config/s1-dtri:        waterlevel (s1) interpolated between quads
+- raster/config/depth-quad:     s1-quad minus bathymetry
+- raster/config/depth-dtri:     s1-dtri minus bathymetry
 
 Also available are the variables derived from the per-quad maxima of the waterlevel:
 
-- raster/config/s1-max-quad:    maximum waterlevel (s1) per quad
-- raster/config/s1-max-dtri:    maximum waterlevel (s1) per quad, interpolated
-- raster/config/depth-max-quad: maximum waterdepth (s1 - bathymetry) per quad
-- raster/config/depth-max-dtri: maximum waterdepth (s1 - bathymetry) per quad, interpolated
+- raster/config/s1-max-quad:    temporal maximum of s1-quad
+- raster/config/s1-max-dtri:    temporal maximum of s1-max-dtri
+- raster/config/depth-max-quad: temporal maximum of depth-quad
+- raster/config/depth-max-dtri: temporal maximum of depth-dtri
 
 Here are some more exotic derivatives:
 
