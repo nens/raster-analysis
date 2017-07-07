@@ -11,6 +11,8 @@ Changelog of raster-analysis
 
 - Fixed version mismatch in analysis upstream.
 
+- Bumped netCDF4 to 1.2.4
+
 
 0.1 (2016-12-05)
 ----------------
