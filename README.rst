@@ -32,8 +32,8 @@ How to calculate interpolated depth
 A note on the available configurations:
 
 - raster/config/bathymetry:     bathymetry
-- raster/config/s1-quad:        waterlevel (s1) with original quad layout
-- raster/config/s1-dtri:        waterlevel (s1) interpolated between quads
+- raster/config/s1-quad:        waterlevel (s1) in original computational cell layout
+- raster/config/s1-dtri:        waterlevel (s1) interpolated between computational cells
 - raster/config/depth-quad:     s1-quad minus bathymetry
 - raster/config/depth-dtri:     s1-dtri minus bathymetry
 
