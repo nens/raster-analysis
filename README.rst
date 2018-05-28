@@ -62,6 +62,6 @@ file. These will be (where [stat] could be something like 'avg'):
 
 \*store-3di and store-info are commands from the nens/raster-store library.
 
-\*\*only with the '-a' or '--wavefront' option.
+\*\*only with the '-w' or '--wavefront' option.
 
-\*\*\*with the '-f' or '--aggregate' option.
+\*\*\*with the '-a' or '--aggregate' option.
