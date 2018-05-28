@@ -10,13 +10,13 @@ How to calculate interpolated depth
    and many more::
 
     $ mkdir raster
-    $ store-3di subgrid_map.nc dem.tif raster/storage raster/config -c 2 -a -f flow_aggregate.nc
+    $ store-3di results-3di.nc dem.tif raster/storage raster/config -c 2 -w -a aggregate-results-3di.nc
 
-   here the optional parameter '-c 2' indicates a cellsize of 2 and '-a'
-   enables the costly calculation of arrival times. Cellsize determines the
-   level of detail for interpolated variables and the arrival times. Any time
-   aggregations found in the optional flow_aggregate file will be available in
-   the results as well.
+   here the optional parameter '-c 2' indicates a cellsize of 2 and '-w'
+   enables the costly calculation of the wavefront map. Cellsize determines the
+   level of detail for interpolated variables and the wavefront map. Any time
+   aggregations found in the optional aggregate file will be available in the
+   results as well.
 
 3. Check the available period and frames using 'store-info'\*::
 
@@ -51,7 +51,7 @@ Here are some more exotic derivatives:
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
-Furthermore, when supplying a flow-aggregate.nc file\*\*\*, a numer of
+Furthermore, when supplying a aggregate-results-3di.nc file\*\*\*, a numer of
 extra wrappers will be made available, depending on the contents of that
 file. These will be (where [stat] could be something like 'avg'):
 
@@ -62,6 +62,6 @@ file. These will be (where [stat] could be something like 'avg'):
 
 \*store-3di and store-info are commands from the nens/raster-store library.
 
-\*\*only with the '-a' or '--arrival' option.
+\*\*only with the '-a' or '--wavefront' option.
 
-\*\*\*with the '-f' or '--flow-aggregate' option.
+\*\*\*with the '-f' or '--aggregate' option.
