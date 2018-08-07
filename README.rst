@@ -10,7 +10,7 @@ How to calculate interpolated depth
    and many more::
 
     $ mkdir raster
-    $ store-3di results-3di.nc dem.tif raster/storage raster/config -c 2 -w -a aggregate-results-3di.nc
+    $ store-3di results_3di.nc dem.tif raster/storage raster/config -c 2 -w -a aggregate_results_3di.nc
 
    here the optional parameter '-c 2' indicates a cellsize of 2 and '-w'
    enables the costly calculation of the wavefront map. Cellsize determines the
@@ -51,7 +51,7 @@ Here are some more exotic derivatives:
 - raster/config/ucr-max-quad:       Maximum flow velocity in meters per second
 - raster/config/vol-first-quad:     Timestep(?) of arrival of first water in quad
 
-Furthermore, when supplying a aggregate-results-3di.nc file\*\*\*, a numer of
+Furthermore, when supplying a aggregate_results_3di.nc file\*\*\*, a numer of
 extra wrappers will be made available, depending on the contents of that
 file. These will be (where [stat] could be something like 'avg'):
 
