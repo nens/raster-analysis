@@ -22,8 +22,8 @@ from raster_analysis import common
 gdal.UseExceptions()
 ogr.UseExceptions()
 
-POINT = b'POINT({} {})'
-KEY = b'height'
+POINT = str('POINT({} {})')
+KEY = str('height')
 
 
 def get_parser():
@@ -259,6 +259,7 @@ def command(polygon_path, linestring_path, store_paths,
 
         # query the linestrings
         for linestring_feature in linestring_features.query(polygon):
+            print('.')
             linestring = linestring_feature.geometry()
 
             case = Case(store=store,
