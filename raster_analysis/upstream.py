@@ -259,7 +259,6 @@ def command(polygon_path, linestring_path, store_paths,
 
         # query the linestrings
         for linestring_feature in linestring_features.query(polygon):
-            print('.')
             linestring = linestring_feature.geometry()
 
             case = Case(store=store,
