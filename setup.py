@@ -39,10 +39,12 @@ setup(name='raster-analysis',
       extras_require={'test': tests_require},
       entry_points={
           'console_scripts': [
+              # in use
+              'lextract = raster_analysis.lextract:main',
+              # deprecated in favor of raster-tools variant
               'median = raster_analysis.median:main',
               'zonal = raster_analysis.zonal:main',
               'centroid = raster_analysis.centroid:main',
               'upstream = raster_analysis.upstream:main',
-              'lextract = raster_analysis.lextract:main',
           ]},
       )
